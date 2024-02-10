@@ -1,0 +1,15 @@
+# env
+.env
+
+# OSX
+.DS_Store
+
+# C lang
+*.so
+*.o
+
+# Node.js
+node_modules
+
+# Python
+*.pyc
