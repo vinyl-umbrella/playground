@@ -13,3 +13,11 @@ node_modules
 
 # Python
 *.pyc
+
+# IaC
+.serverless
+.terraform
+*tfstate
+*.tfstate.backup
+
+*.zip
