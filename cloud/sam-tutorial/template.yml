@@ -1,37 +1,40 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: |
   hello
   Sample SAM Template for sam-tutorial
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
-Globals:
-  Function:
-    Timeout: 3
 
 Resources:
-  HelloWorldFunction:
+  Func:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: hello_world/
+      FunctionName: sam-tutorial-func
+      CodeUri: app/
       Handler: app.lambda_handler
       Runtime: python3.12
       MemorySize: 128
+      Timeout: 3
+      LoggingConfig:
+        LogFormat: JSON
+      Architectures:
+        - x86_64
       Layers:
-        - !Ref HelloWorldLayer
-      Events:
-        ScheduledFunction:
-          Type: ScheduleV2
-          Properties:
-            ScheduleExpression: cron(0 12 * * ? *)
-            ScheduleExpressionTimezone: Asia/Tokyo
-            Name: !Sub ${HelloWorldFunction}-scheduler
-            Description: Scheduled event for hello world
+        - !Ref requestsLayer
+      # Events:
+      #   ScheduledFunction:
+      #     Type: ScheduleV2
+      #     Properties:
+      #       ScheduleExpression: cron(0 12 * * ? *)
+      #       ScheduleExpressionTimezone: Asia/Tokyo
+      #       Name: !Sub ${HelloWorldFunction}-scheduler
+      #       Description: Scheduled event for hello world
 
-  HelloWorldLayer:
+  requestsLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
-      LayerName: HelloWorldLayer
+      LayerName: requests
       Description: A layer for hello world
       ContentUri: layer/
       CompatibleRuntimes:
@@ -39,11 +42,51 @@ Resources:
     Metadata:
       BuildMethod: python3.12
 
+  FuncLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Func}"
+      RetentionInDays: 7
+
+  FuncLogFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref FuncLogGroup
+      FilterPattern: '{$.record.status = "timeout"}'
+      MetricTransformations:
+        - MetricValue: 1
+          MetricNamespace: "lambda/app-metrics"
+          MetricName: "TimeoutCount"
+
+  TimeoutAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Func}-timeout-alarm"
+      AlarmDescription: !Sub "Alarm if function ${Func} times out"
+      Namespace: "lambda/app-metrics"
+      MetricName: !Sub "{FuncLogFilter}"
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Sub arn:aws:sns:${AWS::Region}:${AWS::AccountId}:sns-alert
+
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldFunction:
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+  Func:
+    Value: !GetAtt Func.Arn
+  FuncRole:
+    Value: !GetAtt Func.Arn
+  requestsLayer:
+    Value: !Ref requestsLayer
+  FuncLogGroup:
+    Value: !GetAtt FuncLogGroup.Arn
+  FuncLogFilter:
+    Value: !Ref FuncLogFilter
+  TimeoutAlarm:
+    Value: !Ref TimeoutAlarm
