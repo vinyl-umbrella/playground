@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -19,6 +20,14 @@ func main() {
 	verifyResult1, _ := verify(token1, key)
 	fmt.Println(user1, token1, verifyResult1)
 
+	// JWT none Attack.
+	splittedToken1 := strings.Split(token1, ".")
+	// {"alg": "none","typ": "JWT"} => eyJhbGciOiAibm9uZSIsInR5cCI6ICJKV1QifQ
+	token1NoneAlg := "eyJhbGciOiAibm9uZSIsInR5cCI6ICJKV1QifQ." + splittedToken1[1] + "." + splittedToken1[2]
+
+	verifyResult1NoneAlg, _ := verify(token1NoneAlg, key)
+	fmt.Println(user1, token1NoneAlg, verifyResult1NoneAlg)
+
 	// Sign and verify for user2, but token expired
 	user2 := "user2"
 	token2, _ := sign(user2, key)
@@ -27,8 +36,8 @@ func main() {
 	fmt.Println(user2, token2, verifyResult2)
 }
 
+// Generate a 32 bit secret key
 func initKey() ([]byte, error) {
-	// Generate a 32 bit secret key
 	key := make([]byte, 32)
 	_, err := rand.Read(key)
 	if err != nil {
@@ -38,8 +47,8 @@ func initKey() ([]byte, error) {
 	return key, nil
 }
 
+// Create a new token
 func sign(userid string, secretKey []byte) (string, error) {
-	// Create a new token
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	// Set some claims
@@ -56,6 +65,7 @@ func sign(userid string, secretKey []byte) (string, error) {
 	return tokenString, nil
 }
 
+// Verify the token
 func verify(tokenString string, secretKey []byte) (bool, error) {
 	// Parse the token
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
