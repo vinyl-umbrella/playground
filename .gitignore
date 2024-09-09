@@ -19,5 +19,6 @@ node_modules
 .terraform
 *tfstate
 *.tfstate.backup
+.aws-sam
 
 *.zip
