@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: sample ecs scheduled task
 
 Parameters:
-  ServiceName:
+  ProjectName:
     Type: String
     Default: sample-service
 
@@ -16,7 +16,7 @@ Resources:
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: !Sub ${ServiceName}-task
+      Family: !Sub ${ProjectName}-task
       Cpu: "256"
       Memory: "512"
       RuntimePlatform:
@@ -27,15 +27,18 @@ Resources:
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
       TaskRoleArn: !GetAtt TaskRole.Arn
       ContainerDefinitions:
-        - Name: !Sub ${ServiceName}-container
+        - Name: !Sub ${ProjectName}-container
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/sample/py:latest
           LogConfiguration:
             LogDriver: awslogs
             Options:
               awslogs-region: !Ref AWS::Region
-              awslogs-group: !Sub /ecs/${ServiceName}
+              awslogs-group: !Sub /ecs/${ProjectName}
               awslogs-stream-prefix: ecs
           ReadonlyRootFilesystem: true
+          Environment:
+            - Name: NAME
+              Value: !Ref ProjectName
 
   TaskExecutionRole:
     Type: AWS::IAM::Role
@@ -56,6 +59,13 @@ Resources:
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/ecs/${ProjectName}:*
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
                 Resource: "*"
 
   TaskRole:
@@ -81,8 +91,9 @@ Resources:
   ScheduledTask:
     Type: "AWS::Events::Rule"
     Properties:
+      Name: !Sub ${ProjectName}-scheduled-task
       Description: "Scheduled Task"
-      # every day 12:00
+      # every day 12:00 UTC
       ScheduleExpression: "cron(0 12 * * ? *)"
       State: "ENABLED"
       Targets:
@@ -90,7 +101,7 @@ Resources:
           Id: "EcsScheduledTask"
           RoleArn: !GetAtt ScheduledTaskRole.Arn
           EcsParameters:
-            TaskDefinitionArn: !Ref MyTaskDefinition
+            TaskDefinitionArn: !Ref TaskDefinition
             TaskCount: 1
             LaunchType: "FARGATE"
             NetworkConfiguration:
@@ -100,3 +111,29 @@ Resources:
                   - "subnet-xxxxxxxx"
                 SecurityGroups:
                   - "sg-xxxxxxxx"
+
+  ScheduledTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ecs-scheduled-task-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecs:RunTask
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource:
+                  - !GetAtt TaskExecutionRole.Arn
+                  - !GetAtt TaskRole.Arn
