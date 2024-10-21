@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: An AWS Serverless Application Model template describing your function.
+Resources:
+  NotifyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src
+      MemorySize: 128
+      Timeout: 3
+      LoggingConfig:
+        LogFormat: JSON
+      Handler: notify.main
+      Runtime: python3.12
+      Architectures:
+        - arm64
+      PackageType: Zip
+      Environment:
+        Variables:
+          TOPIC_ARN: !Sub arn:aws:sns:${AWS::Region}:${AWS::AccountId}:sns-alert
+      Events:
+        Topic:
+          Type: SNS
+          Properties:
+            Topic: !Ref MyErrorTopic
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - sns:Publish
+              Resource: !Sub arn:aws:sns:${AWS::Region}:${AWS::AccountId}:sns-alert
+
+  MyErrorTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: MyErrorTopic
+      TopicName: MyErrorTopic
