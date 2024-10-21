@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: An AWS Serverless Application Model template describing your function.
+Resources:
+  TestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src
+      MemorySize: 128
+      Timeout: 3
+      LoggingConfig:
+        LogFormat: JSON
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.12
+      Architectures:
+        - arm64
+      EventInvokeConfig:
+        MaximumRetryAttempts: 2
+        DestinationConfig:
+          OnFailure:
+            Destination: !Sub arn:aws:sns:${AWS::Region}:${AWS::AccountId}:MyErrorTopic
+            Type: SNS
+
+      PackageType: Zip
+
+      Events:
+        ScheduledFunction:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(30 0 * * ? *)
+            ScheduleExpressionTimezone: Asia/Tokyo
+            Name: !Sub ${TestFunction}-scheduler
+            Description: Scheduled event for hello world

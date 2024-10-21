@@ -1,0 +1,31 @@
+# More information about the configuration file can be found here:
+# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-config.html
+version = 0.1
+
+[default]
+[default.global.parameters]
+profile = ""
+stack_name = "test-error-notify"
+s3_bucket = ""
+s3_prefix = "test-error-notify"
+region = "ap-northeast-1"
+
+[default.build.parameters]
+cached = true
+parallel = true
+# use_container = true
+
+[default.validate.parameters]
+lint = true
+
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+disable_rollback = false
+image_repositories = []
+
+[default.sync.parameters]
+watch = true
+
+[default.local_start_lambda.parameters]
+warm_containers = "EAGER"
