@@ -35,11 +35,10 @@ jobs:
 
       - name: Output step summary
         env:
-          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
           SESSION_NAME: ${{ steps.session.outputs.name }}
           CLOUDTRAIL_URL: https://console.aws.amazon.com/cloudtrail/home#/events
         run: |
-          echo "## Authorized on AWS (${AWS_ACCOUNT_ID})" >> "${GITHUB_STEP_SUMMARY}"
+          echo "## Authorized on AWS" >> "${GITHUB_STEP_SUMMARY}"
           echo "- ${CLOUDTRAIL_URL}?Username=${SESSION_NAME}" >> "${GITHUB_STEP_SUMMARY}"
 
       - uses: actions/setup-python@v5
