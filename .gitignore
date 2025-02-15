@@ -13,6 +13,7 @@ node_modules
 
 # Python
 *.pyc
+.venv
 
 # IaC
 .serverless

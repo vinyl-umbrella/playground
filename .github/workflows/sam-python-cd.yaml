@@ -1,0 +1,57 @@
+name: sam-python-cd
+
+on:
+  push:
+    branches:
+      - "main"
+    paths:
+      - "aws/sam-cicd/sample-python/**"
+
+jobs:
+  deploy:
+    defaults:
+      run:
+        working-directory: aws/sam-cicd/sample-python
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate session name
+        id: session
+        run: |
+          repo="${GITHUB_REPOSITORY#${GITHUB_REPOSITORY_OWNER}/}"
+          echo "name=${repo}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "${GITHUB_OUTPUT}"
+
+      - name: Setup AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ secrets.IAM_ROLE_ARN }}
+          role-session-name: ${{ steps.session.outputs.name }}
+
+      - name: Output step summary
+        env:
+          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          SESSION_NAME: ${{ steps.session.outputs.name }}
+          CLOUDTRAIL_URL: https://console.aws.amazon.com/cloudtrail/home#/events
+        run: |
+          echo "## Authorized on AWS (${AWS_ACCOUNT_ID})" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- ${CLOUDTRAIL_URL}?Username=${SESSION_NAME}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: aws/sam-cicd/sample-python/.python-version
+
+      - name: Setup aws-sam
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Build & Deploy
+        run: |
+          sam build
+          sam deploy --s3-bucket ${{secrets.S3_BUCKET}} --no-confirm-changeset
