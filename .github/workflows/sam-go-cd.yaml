@@ -6,12 +6,6 @@ on:
       - "main"
     paths:
       - "aws/sam-cicd/sample-go/**"
-  pull_request:
-    branches:
-      - "main"
-    paths:
-      - "aws/sam-cicd/sample-go/**"
-
 jobs:
   deploy:
     defaults:
