@@ -23,9 +23,6 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "aws/sam-cicd/sample-python/.python-version"
       - name: Setup aws-sam
         uses: aws-actions/setup-sam@v2
         with:
@@ -35,10 +32,8 @@ jobs:
         with:
           aws-region: ${{secrets.AWS_REGION}}
           role-to-assume: ${{secrets.IAM_ROLE_ARN}}
-
-      # - run: aws sts get-caller-identity
-
-      # - name: Build & Deploy Cloudformation stacks
-      #   run: |
-      #     sam build --template-file ${TEMPLATE_FILE}
-      #     sam deploy --template-file ${TEMPLATE_FILE}
+      - run: aws sts get-caller-identity
+      - name: Build & Deploy
+        run: |
+          sam build
+          sam deploy --s3-bucket ${S3_BUCKET}--no-confirm-changeset
