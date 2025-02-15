@@ -32,11 +32,11 @@ jobs:
         with:
           aws-region: ${{secrets.AWS_REGION}}
           role-to-assume: ${{secrets.IAM_ROLE_ARN}}
-      - run: aws sts get-caller-identity
+          role-session-name: ${{github.sha}}
       - uses: actions/setup-python@v5
         with:
           python-version-file: aws/sam-cicd/sample-python/.python-version
       - name: Build & Deploy
         run: |
           sam build
-          sam deploy --s3-bucket ${S3_BUCKET} --no-confirm-changeset
+          sam deploy --s3-bucket ${{secrets.S3_BUCKET}} --no-confirm-changeset
