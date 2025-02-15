@@ -1,12 +1,7 @@
 name: sam-python-cd
 
 on:
-  # push:
-  #   branches:
-  #     - "main"
-  #   paths:
-  #     - "aws/sam-cicd/sample-python/**"
-  pull_request:
+  push:
     branches:
       - "main"
     paths:

@@ -3,6 +3,7 @@ import logging
 
 def lambda_handler(event, context):
     logger = logging.getLogger(__name__)
+    logger.debug("This is a debug message")
     logger.info("Hello World")
     logger.warning("This is a warning")
     logger.error("This is an error")
