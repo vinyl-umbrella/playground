@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: sample go
+
+Resources:
+  Func:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: sample-go
+      CodeUri: ./
+      Handler: bootstrap
+      Runtime: provided.al2023
+      MemorySize: 128
+      Timeout: 3
+      Environment:
+        Variables:
+          ENV: prod
+      Architectures:
+        - x86_64
