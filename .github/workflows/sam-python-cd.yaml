@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ".python-version"
+          python-version: "aws/sam-cicd/sample-python/.python-version"
       - name: Setup aws-sam
         uses: aws-actions/setup-sam@v2
         with:
