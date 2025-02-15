@@ -1,7 +1,7 @@
 import logging
 
 
-def lambda_handler():
+def lambda_handler(event, context):
     logger = logging.getLogger(__name__)
     logger.info("Hello World")
     logger.warning("This is a warning")
@@ -9,4 +9,4 @@ def lambda_handler():
 
 
 if __name__ == "__main__":
-    lambda_handler()
+    lambda_handler({}, None)
