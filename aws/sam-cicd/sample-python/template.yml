@@ -1,0 +1,18 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: sample python
+
+Resources:
+  Func:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: sample-python
+      CodeUri: src/
+      Handler: main.lambda_handler
+      Runtime: python3.13
+      MemorySize: 128
+      Timeout: 3
+      LoggingConfig:
+        LogFormat: JSON
+      Architectures:
+        - x86_64
