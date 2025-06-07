@@ -28,7 +28,7 @@ jobs:
       - name: Cache Poetry dependencies
         uses: actions/cache@v4
         with:
-          path: .venv
+          path: python/poetry-actions/.venv
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
