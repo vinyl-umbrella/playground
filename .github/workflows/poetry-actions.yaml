@@ -1,0 +1,40 @@
+name: poetry setup and test
+
+on:
+  push:
+    paths:
+      - "python/poetry-actions/**"
+
+jobs:
+  ci:
+    defaults:
+      run:
+        working-directory: python/poetry-actions
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: python/poetry-actions/.python-version
+
+      - name: Setup Poetry
+        run: |
+          pipx install poetry==1.8.5
+          poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run tests
+        run: poetry run pytest
