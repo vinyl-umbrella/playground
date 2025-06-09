@@ -5,13 +5,13 @@ Description: sample ecs scheduled task
 Parameters:
   ProjectName:
     Type: String
-    Default: sample-service
+    Default: sample-ecs
 
 Resources:
   Cluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: robo-cluster
+      ClusterName: sample-cluster
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -97,7 +97,7 @@ Resources:
       ScheduleExpression: "cron(0 12 * * ? *)"
       State: "ENABLED"
       Targets:
-        - Arn: !GetAtt EcsScheduledTask.Arn
+        - Arn: !GetAtt Cluster.Arn
           Id: "EcsScheduledTask"
           RoleArn: !GetAtt ScheduledTaskRole.Arn
           EcsParameters:

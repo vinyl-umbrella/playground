@@ -1,5 +1,5 @@
-# FROM gcr.io/distroless/python3-debian12
-FROM --platform=linux/arm64 gcr.io/distroless/python3-debian12
+# Use the base image without platform flag
+FROM gcr.io/distroless/python3-debian12
 
 WORKDIR /app
 COPY ./app /app
