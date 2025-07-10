@@ -1,0 +1,35 @@
+{
+    "Comment": "Simple workflow that calls AWS API and returns the result",
+    "StartAt": "GetCallerIdentity",
+    "States": {
+        "GetCallerIdentity": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:sts:getCallerIdentity",
+            "Parameters": {},
+            "Next": "ListUsers"
+        },
+        "ListUsers": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::aws-sdk:iam:listUsers",
+            "Parameters": {
+                "MaxItems": 5
+            },
+            "ResultPath": "$.ListUsers",
+            "Next": "Wait"
+        },
+        "Wait": {
+            "Type": "Wait",
+            "Seconds": 5,
+            "Next": "FormatResponse"
+        },
+        "FormatResponse": {
+            "Type": "Pass",
+            "Parameters": {
+                "message": "Workflow completed successfully",
+                "timestamp.$": "$$.State.EnteredTime",
+                "userCount.$": "$.ListUsers.Users"
+            },
+            "End": true
+        }
+    }
+}

@@ -1,0 +1,55 @@
+{
+    "Comment": "Example of Run Task",
+    "StartAt": "Run Task",
+    "States": {
+        "Run Task": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::ecs:runTask.sync",
+            "Parameters": {
+                "LaunchType": "FARGATE",
+                "Cluster": "arn:aws:ecs:(リージョン):(AWSアカウントID):cluster/(クラスター名)",
+                "TaskDefinition": "arn:aws:ecs:(リージョン):(AWSアカウントID):task-definition/(タスク定義)",
+                "NetworkConfiguration": {
+                    "AwsvpcConfiguration": {
+                        "Subnets": [
+                            "サブネットID"
+                        ],
+                        "SecurityGroups": [
+                            "セキュリティグループID"
+                        ],
+                        "AssignPublicIp": "DISABLED"
+                    }
+                }
+            },
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "Next": "Alert",
+                    "ResultPath": null
+                }
+            ],
+            "Retry": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "IntervalSeconds": 3,
+                    "MaxAttempts": 3,
+                    "BackoffRate": 5
+                }
+            ],
+            "End": true
+        },
+        "Alert": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::sns:publish",
+            "Parameters": {
+                "TopicArn": "arn:aws:sns:(リージョン):(AWSアカウントID):(SNSトピック名)",
+                "Message.$": "$.message"
+            },
+            "End": true
+        }
+    }
+}

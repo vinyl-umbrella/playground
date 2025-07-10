@@ -1,0 +1,198 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  API Gateway + Step Functions integration with API Key authentication
+
+Resources:
+  # Step Functions State Machine (Express Workflow for synchronous execution)
+  SimpleStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: statemachine/simple_workflow.asl.json
+      Role: !GetAtt StepFunctionsRole.Arn
+      Type: EXPRESS
+      Logging:
+        Level: ALL
+        IncludeExecutionData: true
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/stepfunctions/${SimpleStateMachine.Name}"
+
+  # # CloudWatch Log Group for State Machine
+  # StateMachineLogGroup:
+  #   Type: AWS::Logs::LogGroup
+  #   Properties:
+  #     LogGroupName: !Sub "/aws/stepfunctions/${AWS::StackName}-SimpleStateMachine"
+  #     RetentionInDays: 14
+
+  # IAM Role for Step Functions
+  StepFunctionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: StepFunctionsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:CreateLogDelivery
+                  - logs:GetLogDelivery
+                  - logs:UpdateLogDelivery
+                  - logs:DeleteLogDelivery
+                  - logs:ListLogDeliveries
+                  - logs:PutResourcePolicy
+                  - logs:DescribeResourcePolicies
+                  - logs:DescribeLogGroups
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - sts:GetCallerIdentity
+                  - iam:ListUsers
+                Resource: "*"
+
+  # IAM Role for API Gateway to execute Step Functions synchronously
+  ApiGatewayStepFunctionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: StepFunctionsExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - states:StartSyncExecution
+                Resource: !Ref SimpleStateMachine
+
+  # API Gateway
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: v1
+      Auth:
+        ApiKeyRequired: true
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          LoggingLevel: INFO
+          DataTraceEnabled: false
+          MetricsEnabled: false
+      DefinitionBody:
+        openapi: "3.0.1"
+        info:
+          title: "Step Functions Sync API"
+          version: "1.0"
+        paths:
+          /start-workflow:
+            post:
+              security:
+                - api_key: []
+              x-amazon-apigateway-integration:
+                type: "aws"
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:states:action/StartSyncExecution"
+                credentials: !GetAtt ApiGatewayStepFunctionsRole.Arn
+                httpMethod: "POST"
+                requestTemplates:
+                  application/json: !Sub |
+                    {
+                      "stateMachineArn": "${SimpleStateMachine}",
+                      "input": "$util.escapeJavaScript($input.body)"
+                    }
+                responses:
+                  default:
+                    statusCode: "200"
+                    responseTemplates:
+                      application/json: |
+                        #set($inputRoot = $util.parseJson($input.body))
+                        #if($inputRoot.status == "SUCCEEDED")
+                        {
+                          "status": "success",
+                          "executionArn": "$inputRoot.executionArn",
+                          "result": $inputRoot.output
+                        }
+                        #elseif($inputRoot.status == "FAILED")
+                        {
+                          "status": "failed",
+                          "executionArn": "$inputRoot.executionArn",
+                          "error": "$inputRoot.error",
+                          "cause": "$inputRoot.cause"
+                        }
+                        #else
+                        {
+                          "status": "timeout",
+                          "executionArn": "$inputRoot.executionArn",
+                          "message": "Execution timed out or was aborted"
+                        }
+                        #end
+              responses:
+                "200":
+                  description: "Success"
+                  content:
+                    application/json:
+                      schema:
+                        type: object
+        components:
+          securitySchemes:
+            api_key:
+              type: "apiKey"
+              name: "x-api-key"
+              in: "header"
+
+  # Usage Plan
+  UsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      UsagePlanName: StepFunctionsUsagePlan
+      Description: Usage plan for Step Functions API
+      ApiStages:
+        - ApiId: !Ref ApiGateway
+          Stage: v1
+    DependsOn: ApiGatewayv1Stage
+
+  # API Key
+  ApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: StepFunctionsApiKey
+      Description: API Key for Step Functions integration
+      Enabled: true
+    DependsOn: ApiGatewayv1Stage
+
+  # Usage Plan Key (Associate API Key with Usage Plan)
+  UsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref ApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref UsagePlan
+
+Outputs:
+  ApiGatewayEndpoint:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/v1"
+
+  ApiKeyId:
+    Description: "API Key ID"
+    Value: !Ref ApiKey
+
+  StateMachineArn:
+    Description: "State Machine ARN"
+    Value: !Ref SimpleStateMachine
