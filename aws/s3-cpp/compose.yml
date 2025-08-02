@@ -1,0 +1,14 @@
+services:
+  s3-cpp:
+    build: .
+    container_name: s3-cpp-processor
+    volumes:
+      - ./src:/app/src
+      - ./output:/app/output
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-ap-northeast-1}
+    stdin_open: true
+    tty: true
+    command: /bin/bash
