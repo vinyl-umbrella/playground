@@ -25,7 +25,7 @@ func (b *BucketBasics) StreamDL(ctx context.Context, bucketName, objectKey, file
 	}
 	defer file.Close()
 
-	// stream downlaod
+	// stream download
 	_, err = b.Downloader.Download(ctx, file, &s3.GetObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(objectKey),
@@ -55,12 +55,12 @@ func simpleGetObject(ctx context.Context, s3Client *s3.Client, bucketName, objec
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
+	defer file.Close()
 
 	_, err = io.Copy(file, result.Body)
 	if err != nil {
 		return fmt.Errorf("failed to copy object data: %w", err)
 	}
-	defer file.Close()
 
 	return nil
 }

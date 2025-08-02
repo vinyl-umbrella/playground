@@ -44,7 +44,10 @@ func createBenchmarkDownloader(partSize int64, concurrency int) (*BucketBasics, 
 
 // チャンクサイズ別ベンチマーク (チャンクサイズ: [512KB, 1MB, 2MB, 5MB, 10MB], 並行数: 1)
 func BenchmarkS3DownloadPartSize(b *testing.B) {
-	bucketName, objectKey, _ := getTestConfig()
+	bucketName, objectKey, ok := getTestConfig()
+	if !ok {
+		b.Fatal("Failed to get test config. Set S3_BUCKET_NAME and S3_OBJECT_KEY environment variables.")
+	}
 
 	testCases := []struct {
 		name     string
@@ -90,7 +93,10 @@ func BenchmarkS3DownloadPartSize(b *testing.B) {
 
 // 並行数別ベンチマーク (チャンクサイズ: 1MiB, 並行数: [2^0, 2^1, 2^2, 2^3, 2^4])
 func BenchmarkS3DownloadConcurrency(b *testing.B) {
-	bucketName, objectKey, _ := getTestConfig()
+	bucketName, objectKey, ok := getTestConfig()
+	if !ok {
+		b.Fatal("Failed to get test config. Set S3_BUCKET_NAME and S3_OBJECT_KEY environment variables.")
+	}
 
 	testCases := []struct {
 		name        string
@@ -132,7 +138,10 @@ func BenchmarkS3DownloadConcurrency(b *testing.B) {
 
 // 速度重視の設定 (チャンクサイズ: 10MiB、並行数: 16)
 func BenchmarkS3DownloadSpeedOptimized(b *testing.B) {
-	bucketName, objectKey, _ := getTestConfig()
+	bucketName, objectKey, ok := getTestConfig()
+	if !ok {
+		b.Fatal("Failed to get test config. Set S3_BUCKET_NAME and S3_OBJECT_KEY environment variables.")
+	}
 
 	bucketBasics, err := createBenchmarkDownloader(10*1024*1024, 16)
 	if err != nil {
@@ -158,7 +167,10 @@ func BenchmarkS3DownloadSpeedOptimized(b *testing.B) {
 }
 
 func BenchmarkSimpleS3GetObject(b *testing.B) {
-	bucketName, objectKey, _ := getTestConfig()
+	bucketName, objectKey, ok := getTestConfig()
+	if !ok {
+		b.Fatal("Failed to get test config. Set S3_BUCKET_NAME and S3_OBJECT_KEY environment variables.")
+	}
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
