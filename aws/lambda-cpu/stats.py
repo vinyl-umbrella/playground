@@ -47,39 +47,34 @@ def analyze_results(items: list[dict]):
         results[arch][memory_mb]["physical"][physical_cores] += 1
         results[arch][memory_mb]["cpu_model"][cpu_model_name] += 1
 
+    # Markdown テーブル出力
+    print("| メモリサイズ (MB) | CPU アーキテクチャ | 論理コア | 物理コア | CPU モデル |")
+    print("|------------------|-------------------|---------|---------|-----------|")
+
     for arch in sorted(results.keys()):
-        print(f"cpu arch: {arch}")
-        print("-" * 80)
-
         for memory_mb in sorted(results[arch].keys(), key=lambda x: int(x) if x.isdigit() else 0):
-            print(f"\n  mem size: {memory_mb} MB")
-
             logical_stats = results[arch][memory_mb]["logical"]
-            if logical_stats:
-                print(f"    logical cores:")
-                total = sum(logical_stats.values())
-                for cores, count in sorted(logical_stats.items()):
-                    percentage = (count / total * 100) if total > 0 else 0
-                    print(f"      {cores} cores: {count:3d} times ({percentage:5.1f}%)")
-
             physical_stats = results[arch][memory_mb]["physical"]
-            if physical_stats:
-                print(f"    physical cores:")
-                total = sum(physical_stats.values())
-                for cores, count in sorted(physical_stats.items()):
-                    percentage = (count / total * 100) if total > 0 else 0
-                    print(f"      {cores} cores: {count:3d} times ({percentage:5.1f}%)")
-
             cpu_model_stats = results[arch][memory_mb]["cpu_model"]
-            if cpu_model_stats:
-                print(f"    CPU models:")
-                total = sum(cpu_model_stats.values())
-                # most_common() で頻度順にソート
-                for model, count in cpu_model_stats.most_common():
-                    percentage = (count / total * 100) if total > 0 else 0
-                    print(f"      {model}: {count:3d} times ({percentage:5.1f}%)")
 
-    print("\n" + "=" * 80)
+            # 最も多いコア数を取得
+            most_common_logical = logical_stats.most_common(1)[0] if logical_stats else (0, 0)
+            most_common_physical = physical_stats.most_common(1)[0] if physical_stats else (0, 0)
+
+            # CPUモデルを改行区切りで結合
+            cpu_model_items = cpu_model_stats.most_common()
+            cpu_models_str = "<br>".join(
+                [f"{model} ({count}回)" for model, count in cpu_model_items]
+            )
+
+            logical_cores_str = f"{most_common_logical[0]} ({most_common_logical[1]}回)"
+            physical_cores_str = f"{most_common_physical[0]} ({most_common_physical[1]}回)"
+
+            print(
+                f"| {memory_mb} | {arch} | {logical_cores_str} | {physical_cores_str} | {cpu_models_str} |"
+            )
+
+    print()
 
 
 def main():
