@@ -1,12 +1,8 @@
-import logging
 from collections import Counter, defaultdict
 
 import boto3
 
 dynamodb = boto3.resource("dynamodb")
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger()
-
 # Config
 DYNAMODB_TABLE_NAME = "lambda-cpu-results"
 
