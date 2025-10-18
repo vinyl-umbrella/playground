@@ -10,7 +10,7 @@ logger = logging.getLogger()
 # Config
 FUNCTIONS = ["lambda-cpu-results-x86_64", "lambda-cpu-results-arm64"]
 MEMORY_SIZES = [128, 256, 512, 1024, 2048, 3008, 4096, 8192, 10240]
-ITERATIONS = 10
+ITERATIONS = 100
 
 
 def update_memory_size(function_name: str, memory_size: int) -> None:
