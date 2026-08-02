@@ -20,7 +20,6 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: lambda-managed-storage-fn
-      Code: src/
       Handler: main.lambda_handler
       Runtime: python3.14
       Timeout: 3
@@ -29,3 +28,8 @@ Resources:
       Role: !GetAtt HelloWorldFunctionRole.Arn
       LoggingConfig:
         LogFormat: JSON
+      Code:
+        S3Bucket: sample-sample-sample-bucket
+        S3Key: lambda-managed-storage/function.zip
+        S3ObjectVersion: MyBJP8WQ.MF5x8qLAf_2_3mkIbhhycHp
+        S3ObjectStorageMode: REFERENCE
